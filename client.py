@@ -81,6 +81,9 @@ def connectServer():
         try:
             response = json.loads(client.tryRecv())
             
+            if response is None:
+                raise Exception("Server Disconnected")
+            
             if "status" not in response:
                 raise Exception("Invalid server response")
             elif response["status"] != "1":
@@ -97,7 +100,11 @@ def connectServer():
     def _recvThread(shutdownEvent):
         while not shutdownEvent.is_set():
             try:
-                data = json.loads(client.tryRecv())
+                raw_data = client.tryRecv()
+                if raw_data is None:
+                    raise Exception("Server Disconnected. Type 'exit' to leave")
+
+                data = json.loads(raw_data)
                 if "status" not in data:
                     raise Exception("Invalid server response")
                 elif data["status"] != "1":
@@ -122,6 +129,7 @@ def connectServer():
         message = terminal.getInput()
         if message == "exit":
             stopEvent.set()
+            
             client.close()
             break
         if not message.strip():
@@ -132,7 +140,10 @@ def connectServer():
             "password":configurations.data["password"],
             "message":message
         }
-        client.send(json.dumps(payload))
+        try:
+            client.send(json.dumps(payload))
+        except Exception as e:
+            terminal.print(f'[ERROR] {e}')
                     
                     
     

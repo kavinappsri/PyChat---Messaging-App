@@ -11,105 +11,6 @@ class daemonExecutor(ThreadPoolExecutor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.thread_factory = lambda *a, **kw: threading.Thread(*a, **kw, daemon=True)
-
-#Server Class
-class socketServerManager:
-    def __init__(self, ip, port, maxBacklog = 5):
-        #Initialize all the properties
-        self.ip = ip
-        self.port = port
-        self.maxBacklog = maxBacklog
-        self.serverOnline = False
-        self.connectionsDict = {}
-        self.inputQueue = queue.Queue()
-        self.sendallQueue = queue.Queue()
-        self.shutdownEvent = threading.Event()
-        self.encoding = 'utf-8'
-
-        #Create the socket, set the opts and bind the ip and port
-        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.server.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-        self.server.bind((self.ip, self.port))
-
-    #Start the Server
-    def start(self):
-        try:
-            self.serverOnline = True
-            executor = daemonExecutor(max_workers=5)
-
-            executor.submit(self.sendallThread)
-
-            id = 0
-            while self.serverOnline:
-                id += 1
-                self.server.listen(self.maxBacklog)
-                connection, address = self.server.accept()
-                self.connectionsDict[id] = connection
-                print(f"[SERVER] New connection from {address}")
-                
-                executor.submit(self.clientThread, connection, id)
-                
-
-            connection.close()
-            self.server.close()
-            
-        except Exception as e:
-            if not self.serverOnline:
-                print("[SERVER] Server stopping exception occured")
-            print("[SERVER] Error: ", e)
-            
-        finally:
-            self.server.close()
-
-    #Stops the server !WIP USE CTRL+C FOR NOW!
-    def stop(self):
-        self.serverOnline = False
-            
-    # Client Handling Function
-    def clientThread(self, connection, id):
-        try:
-            while True:
-                header = connection.recv(10)
-                if header:
-                    msgLength = int(header.decode("utf-8").strip())
-                    payloadBytes = b""
-                    
-                    while len(payloadBytes) < msgLength:
-                        msgChunk = connection.recv(msgLength - len(payloadBytes))
-                        if not msgChunk:
-                            break
-                        payloadBytes += msgChunk
-                        
-                    data = payloadBytes.decode("utf-8")
-                    print(f"[SERVER] Received: {data}")
-                    self.inputQueue.put([id, data])
-                    
-                if not header:
-                    break
-                    
-        except Exception as e:
-            print(f"[SERVER] Error: {e}")
-
-    #Sends messages in sendallQueue to all connections
-    def sendallThread(self):
-        while True:
-            data = self.sendallQueue.get()
-            
-            for connection in self.connectionsDict.values():
-                encData = data.encode(self.encoding)
-                encDataHeader = f"{len(encData):<10}".encode(self.encoding)
-
-                connection.sendall(encDataHeader + encData)
-    
-    #Sends Message to specific client by using its ID via connectionsDict
-    def send(self, id, data):
-        encData = data.encode(self.encoding)
-        encDataHeader = f"{len(encData):<10}".encode(self.encoding)
-        self.connectionsDict[id].sendall(encDataHeader + encData)
-                
-            
-        
 #Client Class
 class socketClientManager:
     def __init__(self, encoding):
@@ -129,6 +30,9 @@ class socketClientManager:
     def tryRecv(self): 
         try:
             header = self.client.recv(10)
+            
+            if not header:
+                return None
 
             msgLength = int(header.decode("utf-8").strip())
             payloadBytes = b""
@@ -155,7 +59,164 @@ class socketClientManager:
 
     #Closes Client
     def close(self):
-        self.client.close()
+        try:
+            self.client.shutdown(socket.SHUT_RDWR)
+            self.client.close()
+        except OSError:
+           pass 
+
+
+#Server Class
+class socketServerManager:
+    def __init__(self, ip, port, maxBacklog = 5):
+        #Initialize all the properties
+        self.ip = ip
+        self.port = port
+        self.maxBacklog = maxBacklog
+        self.serverOnline = False
+        self.connectionsDict = {}
+        self.inputQueue = queue.Queue()
+        self.sendallQueue = queue.Queue()
+        self.shutdownEvent = threading.Event()
+        self.clientLock = threading.Lock()
+        self.executor = ThreadPoolExecutor(max_workers=5)
+        self.encoding = 'utf-8'
+
+        #Create the socket, set the opts and bind the ip and port
+        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.server.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+        self.server.bind((self.ip, self.port))
+
+    #Start the Server
+    def start(self):
+        try:
+            self.serverOnline = True
+
+            self.executor.submit(self.sendallThread)
+
+            id = 0
+            while self.serverOnline:
+                id += 1
+                self.server.listen(self.maxBacklog)
+                connection, address = self.server.accept()
+                with self.clientLock:
+                    self.connectionsDict[id] = connection
+                print(f"[SERVER] New connection from {address}")
+
+                self.executor.submit(self.clientThread, connection, id)
+
+        except Exception as e:
+            if not self.serverOnline:
+                print("[SERVER] Server stopping exception occured")
+            print("[SERVER] Error: ", e)
+
+        finally:
+            self.server.close()
+
+    #Stops the server 
+    def stop(self):
+        #Setting variables
+        self.serverOnline = False
+        self.shutdownEvent.set()
+        
+        #Reloading accept loop
+        reloader_ip = "127.0.0.1" if self.ip == "0.0.0.0" else self.ip
+        try:
+            serverReloader = socketClientManager(self.encoding)
+            serverReloader.connect(reloader_ip, self.port)
+            serverReloader.close()
+        except Exception as e:
+            print(f'[SERVER-STOP] Error {e}')
+        
+        #Closing Client Threads
+        with self.clientLock:
+            for connection in self.connectionsDict.values():
+                try:
+                    connection.shutdown(socket.SHUT_RDWR)
+                    connection.close()
+                except Exception as e:
+                    print(f'[SERVER-STOP] Error {e}')
+        
+        #Sending Poison Pills
+        self.sendallQueue.put(None)
+        self.inputQueue.put(None)
+        
+        #Stopping Executor
+        self.executor.shutdown(wait=False)
+        
+        
+
+    # Client Handling Function
+    def clientThread(self, connection, id):
+        try:
+            while not self.shutdownEvent.is_set():
+                header = connection.recv(10)
+                if header:
+                    msgLength = int(header.decode("utf-8").strip())
+                    payloadBytes = b""
+
+                    while len(payloadBytes) < msgLength:
+                        msgChunk = connection.recv(msgLength - len(payloadBytes))
+                        if not msgChunk:
+                            break
+                        payloadBytes += msgChunk
+
+                    data = payloadBytes.decode("utf-8")
+                    print(f"[SERVER] Received: {data}")
+                    self.inputQueue.put([id, data])
+
+                if not header:
+                    break
+
+        except Exception as e:
+            if not self.shutdownEvent.is_set():
+                print(f"[CLIENT-THREAD] Error: {e}")
+                
+        finally:
+            with self.clientLock:
+                if id in self.connectionsDict:
+                    del self.connectionsDict[id]
+            try:
+                connection.close()
+            except OSError:
+                pass
+
+    #Sends messages in sendallQueue to all connections
+    def sendallThread(self):
+        while not self.shutdownEvent.is_set():
+            data = self.sendallQueue.get()
+            
+            if data is None:
+                break
+                
+            with self.clientLock:
+                connectionSnapshot = list(self.connectionsDict.values())
+
+
+            for connection in connectionSnapshot:
+                try:
+                    encData = data.encode(self.encoding)
+                    encDataHeader = f"{len(encData):<10}".encode(self.encoding)
+                    
+                    connection.sendall(encDataHeader + encData)
+                except OSError:
+                    pass
+
+    #Sends Message to specific client by using its ID via connectionsDict
+    def send(self, id, data):
+        encData = data.encode(self.encoding)
+        encDataHeader = f"{len(encData):<10}".encode(self.encoding)
+        with self.clientLock:
+            connection = self.connectionsDict[id]
+            
+        try:
+            connection.sendall(encDataHeader + encData)
+        except OSError as e:
+            print(f"[SERVER] Error: {e}")
+            
+                
+
             
         
         

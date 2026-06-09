@@ -25,6 +25,16 @@ okResponse = {
     "status":"1"
 }
 
+#FUNCTIONS
+
+def _shutdownThread():
+    while True:
+        cmd = input()
+        if cmd == "stop":
+            print("[SHUTDOWN THREAD] Commencing Shutdown Process")
+            server.stop()
+            break
+
 #EXECUTION LINE
 
 #Loading all objects
@@ -37,12 +47,18 @@ print(f"[INFO] Starting server at {configurations.data['ip']}:{configurations.da
 
 server = network.socketServerManager(configurations.data['ip'], configurations.data['port'])
 serverThread =  threading.Thread(target=server.start, daemon=True)
+shutdownThread = threading.Thread(target=_shutdownThread, daemon=True)
 serverThread.start()
+shutdownThread.start()
 
 
 #Main Loop
 while True:
     packet = server.inputQueue.get()
+    
+    #Check for poison pill
+    if packet is None:
+        break
     
     #Check for JSON packet
     try:
