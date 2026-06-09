@@ -2,7 +2,7 @@ import sys
 import threading
 import os
 
-#_get_char() | Hardware adaptive
+#Hardware adaptive _get_char()
 
 if os.name == 'nt':
     #Windows adapter
@@ -11,7 +11,7 @@ if os.name == 'nt':
     def _get_char():
         ch = msvcrt.getch()
         if ch in (b'\x00', b'\xe0'):
-            mcvrct.getch()
+            msvcrt.getch()
             return None
         return ch.decode("utf-8", errors = "ignore")
 
@@ -31,25 +31,28 @@ else:
         return ch
 
 # CLASS - userInt
-
 class userInt:
     def __init__(self, prompt):
         self.prompt = prompt
         self.inputBuffer = ""
         self.lock = threading.Lock()
 
+    #Redraw prompt and prev input
     def _redraw(self):
         sys.stdout.write(f"\r\033[K{self.prompt}{self.inputBuffer}")
         sys.stdout.flush()
 
+    #Clear terminal
     def clear(self):
         print("\033[H\033[2J", end="")
 
+    #Print, with _redraw
     def print(self, message):
         with self.lock:
             sys.stdout.write(f"\r\033[K{message}\n")
             self._redraw()
 
+    #Records chars till return/nter, then return chars as string
     def getInput(self):
         while True:
             ch = _get_char()

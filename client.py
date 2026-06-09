@@ -23,9 +23,11 @@ strings = {
     
 }
 
-##Functions
+#Action Functions
 
 def registerServer():
+    #Adds Server to config
+    
     terminal.clear()
     
     terminal.print("Enter Server IP")
@@ -43,19 +45,23 @@ def registerServer():
 
 
 def connectServer():
+    #Handles the entire process of connecting to the server
+    
     terminal.clear()
 
     terminal.print("Enter Server IP")
     ip = terminal.getInput()
 
     port = 0
-
+    
+    #Unregistered Server Check
     if ip in configurations.data["servers"]:
         port = configurations.data["servers"][ip]["port"]
     else:
         terminal.print(strings["unregisteredServer"])
         return
 
+    #Instantiate a connection
     client = network.socketClientManager(configurations.data["encoding"])
     try:
         client.connect(ip, port)
@@ -63,6 +69,7 @@ def connectServer():
         terminal.print(f"[ERROR] {e}")
         return
     
+    # Registers itself in the server, if not done so before
     if configurations.data["servers"][ip]["registered"] == False:
         data = {
             "action":"register",
@@ -85,8 +92,9 @@ def connectServer():
         except Exception as e:
             terminal.print(f"[ERROR] {e}")
             return
-
-    def recvThreadF(shutdownEvent):
+    
+    #Function for receiving Thread
+    def _recvThread(shutdownEvent):
         while not shutdownEvent.is_set():
             try:
                 data = json.loads(client.tryRecv())
@@ -103,12 +111,13 @@ def connectServer():
                     terminal.print(f"[ERROR] {e}")
                     break
                 
-
+    #Setting the Stop Signal and starting the thread
     stopEvent = threading.Event()
 
-    recvThread = threading.Thread(target=recvThreadF, daemon=True, args=(stopEvent,))
+    recvThread = threading.Thread(target=_recvThread, daemon=True, args=(stopEvent,))
     recvThread.start()
 
+    #Main Sending Loop, to be running on main thread
     while True:
         message = terminal.getInput()
         if message == "exit":
@@ -132,11 +141,13 @@ def connectServer():
 
 #EXECUTION LINE
 
+#Get the config and User Interface 
 configurations = jsonDB.jsonDB("config.json", configDefault)
 terminal = userInt.userInt("Action > ")
 
-
+#Main Loop
 while True:
+    #Printing Information and Getting input
     terminal.clear()
 
     terminal.print(strings["header"])
@@ -146,11 +157,13 @@ while True:
 
     terminal.print(strings["startMenu"])
     action = terminal.getInput()
-        
+    
+    #Processing and Executing Input    
     try:
         action = int(action)
     except:
         terminal.print(strings["invalidAction"])
+        terminal.getInput()
         continue
             
     if action == 1:

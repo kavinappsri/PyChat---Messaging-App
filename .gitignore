@@ -1,0 +1,5 @@
+/config.json
+/serverconfig.json
+/.idea/
+/__pycache__/
+.DS_Store

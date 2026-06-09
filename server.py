@@ -2,7 +2,6 @@ import network
 import threading
 import json
 import jsonDB
-import queue
 
 #Dictionaries
 
@@ -28,6 +27,8 @@ okResponse = {
 
 #EXECUTION LINE
 
+#Loading all objects
+
 print("[INFO] Loading config")
 
 configurations = jsonDB.jsonDB("serverconfig.json", configDefault)
@@ -39,19 +40,23 @@ serverThread =  threading.Thread(target=server.start, daemon=True)
 serverThread.start()
 
 
-
+#Main Loop
 while True:
     packet = server.inputQueue.get()
+    
+    #Check for JSON packet
     try:
         data = json.loads(packet[1])
     except:
         server.send(packet[0], json.dumps(badRequestResponse))
         continue
 
+    #Check for Action
     if "action" not in data:
         server.send(packet[0], json.dumps(badRequestResponse))
         continue
 
+    #Register Action
     if data["action"] == "register":
         if "username" not in data or "password" not in data:
             server.send(packet[0], json.dumps(badRequestResponse))
@@ -64,6 +69,8 @@ while True:
             configurations.save()
             server.send(packet[0], json.dumps(okResponse))
             continue
+            
+    #Msg Action
     elif data["action"] == "msg":
         if "username" not in data or "password" not in data or "message" not in data:
             server.send(packet[0], json.dumps(badRequestResponse))
@@ -81,6 +88,8 @@ while True:
                 "ping":sendString
             }
             server.sendallQueue.put(json.dumps(sendable))
+            
+    #Invalid Action
     else:
         server.send(packet[0], json.dumps(badRequestResponse))
         

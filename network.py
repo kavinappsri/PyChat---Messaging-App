@@ -3,10 +3,7 @@ import threading
 import queue
 from concurrent.futures import ThreadPoolExecutor
 
-
-
-
-
+#Networking API, for both server and client
 #CLASSES
 
 #Daemon Thread Class
@@ -18,7 +15,7 @@ class daemonExecutor(ThreadPoolExecutor):
 #Server Class
 class socketServerManager:
     def __init__(self, ip, port, maxBacklog = 5):
-        #Save the ip and port
+        #Initialize all the properties
         self.ip = ip
         self.port = port
         self.maxBacklog = maxBacklog
@@ -26,14 +23,16 @@ class socketServerManager:
         self.connectionsDict = {}
         self.inputQueue = queue.Queue()
         self.sendallQueue = queue.Queue()
+        self.shutdownEvent = threading.Event()
         self.encoding = 'utf-8'
 
-        #Create the socket set the opts and bind the ip and port
+        #Create the socket, set the opts and bind the ip and port
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         self.server.bind((self.ip, self.port))
 
+    #Start the Server
     def start(self):
         try:
             self.serverOnline = True
@@ -57,15 +56,17 @@ class socketServerManager:
             
         except Exception as e:
             if not self.serverOnline:
-                print("[SERVER] Server stopped")
+                print("[SERVER] Server stopping exception occured")
             print("[SERVER] Error: ", e)
             
         finally:
             self.server.close()
 
+    #Stops the server !WIP USE CTRL+C FOR NOW!
     def stop(self):
         self.serverOnline = False
             
+    # Client Handling Function
     def clientThread(self, connection, id):
         try:
             while True:
@@ -90,6 +91,7 @@ class socketServerManager:
         except Exception as e:
             print(f"[SERVER] Error: {e}")
 
+    #Sends messages in sendallQueue to all connections
     def sendallThread(self):
         while True:
             data = self.sendallQueue.get()
@@ -99,7 +101,8 @@ class socketServerManager:
                 encDataHeader = f"{len(encData):<10}".encode(self.encoding)
 
                 connection.sendall(encDataHeader + encData)
-
+    
+    #Sends Message to specific client by using its ID via connectionsDict
     def send(self, id, data):
         encData = data.encode(self.encoding)
         encDataHeader = f"{len(encData):<10}".encode(self.encoding)
@@ -107,20 +110,22 @@ class socketServerManager:
                 
             
         
-
+#Client Class
 class socketClientManager:
     def __init__(self, encoding):
         self.encoding = encoding
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-
+    
+    #Connects to a server
     def connect(self, ip, port):
         try:
             self.client.connect((ip, port))
         except Exception:
             raise
             
-
+    
+    #Recieves a Message from the connected server
     def tryRecv(self): 
         try:
             header = self.client.recv(10)
@@ -140,13 +145,15 @@ class socketClientManager:
                 
         except Exception as e:
              raise
-
+    
+    #Sends a message to the server
     def send(self, data):
         encData = data.encode(self.encoding)
         encDataHeader = f"{len(encData):<10}".encode(self.encoding)
         
         self.client.sendall(encDataHeader + encData)
 
+    #Closes Client
     def close(self):
         self.client.close()
             
