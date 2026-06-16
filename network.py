@@ -6,11 +6,6 @@ from concurrent.futures import ThreadPoolExecutor
 #Networking API, for both server and client
 #CLASSES
 
-#Daemon Thread Class
-class daemonExecutor(ThreadPoolExecutor):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.thread_factory = lambda *a, **kw: threading.Thread(*a, **kw, daemon=True)
 #Client Class
 class socketClientManager:
     def __init__(self, encoding):
