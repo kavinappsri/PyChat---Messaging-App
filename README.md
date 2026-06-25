@@ -6,9 +6,9 @@ This is a lightweight messaging app built using python.
 
 ### Start a Server
 
-1. Check for and open the file ```serverconfig.json``` (if there is none, run and close server.py once to generate it).
+1. Check for and open the file ```serverconfig.json``` (if there is none, run and close ```server.py``` once to generate it).
 
-2. In the file, change the values for "ip" and "port" to your desired ip and port (Make sure you have access to your chosen ip and port). By default, it will be set to 0.0.0.0 and 8080.
+2. In the file, change the values for "ip" and "port" to your desired ip and port (Make sure you have access to your chosen ip and port). By default, it will be set to ```0.0.0.0``` and ```8080```.
 
 3. Run ```server.py``` to start your server. Type 'stop' to shut it down
 
