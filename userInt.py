@@ -32,28 +32,29 @@ else:
 
 # CLASS - userInt
 class userInt:
+    """Class for a smarter terminal I/O"""
     def __init__(self, prompt):
         self.prompt = prompt
         self.inputBuffer = ""
         self.lock = threading.Lock()
 
-    #Redraw prompt and prev input
     def _redraw(self):
+        """Internal Function for redrawing the prompt and previous input"""
         sys.stdout.write(f"\r\033[K{self.prompt}{self.inputBuffer}")
         sys.stdout.flush()
 
-    #Clear terminal
     def clear(self):
+        """Clears the terminal"""
         print("\033[H\033[2J", end="")
 
-    #Print, with _redraw
     def print(self, message):
+        """Prints a message to the terminal"""
         with self.lock:
             sys.stdout.write(f"\r\033[K{message}\n")
             self._redraw()
 
-    #Records chars till return/nter, then return chars as string
     def getInput(self):
+        """Records chars till return/enter, then return chars as string"""
         while True:
             ch = _get_char()
             if ch is None:

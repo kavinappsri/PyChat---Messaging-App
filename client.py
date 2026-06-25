@@ -26,7 +26,7 @@ strings = {
 #Action Functions
 
 def registerServer():
-    #Adds Server to config
+    """Adds Server to config"""
     
     terminal.clear()
     
@@ -45,7 +45,7 @@ def registerServer():
 
 
 def connectServer():
-    #Handles the entire process of connecting to the server
+    """Handles the entire process of connecting to the server"""
     
     terminal.clear()
 
@@ -96,8 +96,8 @@ def connectServer():
             terminal.print(f"[ERROR] {e}")
             return
     
-    #Function for receiving Thread
     def _recvThread(shutdownEvent):
+        """Internal function for receiving messages from the server"""
         while not shutdownEvent.is_set():
             try:
                 raw_data = client.tryRecv()

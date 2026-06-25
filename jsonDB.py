@@ -3,7 +3,7 @@ import os
 
 #CLASS JSONDB
 class jsonDB:
-    #Provides a simple database API with read and write capability
+    """Provides a simple database API with read and write capability"""
     def __init__(self, path, default):
         self.path = path
  
@@ -16,8 +16,8 @@ class jsonDB:
                 self.data = default
                 return
                 
-    
-    #saves changes in self.data to the file        
+           
     def save(self):
+        """Saves changes in self.data to the file"""
         with open(self.path, 'w') as f:
             json.dump(self.data, f, indent = 4)

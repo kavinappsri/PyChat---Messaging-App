@@ -28,6 +28,7 @@ okResponse = {
 #FUNCTIONS
 
 def _shutdownThread():
+    """Internal function for handling shutdown"""
     while True:
         cmd = input()
         if cmd == "stop":
