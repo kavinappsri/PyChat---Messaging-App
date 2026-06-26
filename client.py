@@ -51,8 +51,6 @@ def connectServer():
 
     terminal.print("Enter Server IP")
     ip = terminal.getInput()
-
-    port = 0
     
     #Unregistered Server Check
     if ip in configurations.data["servers"]:
@@ -86,8 +84,28 @@ def connectServer():
             
             if "status" not in response:
                 raise Exception("Invalid server response")
+            
             elif response["status"] != "1":
-                raise Exception(f"Server responded with status {response['status']}, error: {response['Error']}")
+                
+                #Checking for already registered server
+                if response["status"] == "3":
+                    data = {
+                        "action":"msg",
+                        "username":configurations.data["username"],
+                        "password":configurations.data["password"],
+                        "message":""
+                    }
+                    client.send(json.dumps(data))
+                    response = json.loads(client.tryRecv())
+                    if "status" not in response:
+                        raise Exception("Invalid server response")
+                    elif response["status"] != "1":
+                        raise Exception(f"Server responded with status {response['status']}, error: {response['Error']}")
+                    configurations.data["servers"][ip]["registered"] = True
+                    configurations.save()
+                else:
+                    raise Exception(f"Server responded with status {response['status']}, error: {response['Error']}")
+                
             else:
                 configurations.data["servers"][ip]["registered"] = True
                 configurations.save()

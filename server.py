@@ -100,6 +100,10 @@ while True:
             server.send(packet[0], json.dumps(ACTION_DENIED_RESPONSE))
             continue
         else:
+            if not data["message"].strip():
+                server.send(packet[0], json.dumps(OK_RESPONSE))
+                continue
+                
             sendString = f'<{data["username"]}> {data["message"]}'
             sendable = {
                 "status":"1",
