@@ -6,23 +6,23 @@ from concurrent.futures import ThreadPoolExecutor
 #Networking API, for both server and client
 #CLASSES
 
-#Client Class
 class socketClientManager:
+    """Provides a simple socket client API"""
     def __init__(self, encoding):
         self.encoding = encoding
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
     
-    #Connects to a server
     def connect(self, ip, port):
+        """Connects to a server at the given ip and port"""
         try:
             self.client.connect((ip, port))
         except Exception:
             raise
             
     
-    #Recieves a Message from the connected server
     def tryRecv(self): 
+        """Tries to recieve a message from the server, returns None if no message is recieved"""
         try:
             header = self.client.recv(10)
             
@@ -45,15 +45,15 @@ class socketClientManager:
         except Exception as e:
              raise
     
-    #Sends a message to the server
     def send(self, data):
+        """Sends a message to the server"""
         encData = data.encode(self.encoding)
         encDataHeader = f"{len(encData):<10}".encode(self.encoding)
         
         self.client.sendall(encDataHeader + encData)
 
-    #Closes Client
     def close(self):
+        """Closes the client connection"""
         try:
             self.client.shutdown(socket.SHUT_RDWR)
             self.client.close()
@@ -63,6 +63,7 @@ class socketClientManager:
 
 #Server Class
 class socketServerManager:
+    """Provides a simple socket server API"""
     def __init__(self, ip, port, maxBacklog = 5):
         #Initialize all the properties
         self.ip = ip
@@ -83,12 +84,13 @@ class socketServerManager:
         self.server.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         self.server.bind((self.ip, self.port))
 
-    #Start the Server
+
     def start(self):
+        """Starts the server"""
         try:
             self.serverOnline = True
 
-            self.executor.submit(self.sendallThread)
+            self.executor.submit(self._sendallThread)
 
             id = 0
             while self.serverOnline:
@@ -99,7 +101,7 @@ class socketServerManager:
                     self.connectionsDict[id] = connection
                 print(f"[SERVER] New connection from {address}")
 
-                self.executor.submit(self.clientThread, connection, id)
+                self.executor.submit(self._clientThread, connection, id)
 
         except Exception as e:
             if not self.serverOnline:
@@ -109,8 +111,8 @@ class socketServerManager:
         finally:
             self.server.close()
 
-    #Stops the server 
     def stop(self):
+        """Stops the server"""
         #Setting variables
         self.serverOnline = False
         self.shutdownEvent.set()
@@ -143,7 +145,8 @@ class socketServerManager:
         
 
     # Client Handling Function
-    def clientThread(self, connection, id):
+    def _clientThread(self, connection, id):
+        """Internal function for handling client connections"""
         try:
             while not self.shutdownEvent.is_set():
                 header = connection.recv(10)
@@ -177,8 +180,8 @@ class socketServerManager:
             except OSError:
                 pass
 
-    #Sends messages in sendallQueue to all connections
-    def sendallThread(self):
+    def _sendallThread(self):
+        """Internal function for sending messages to all clients"""
         while not self.shutdownEvent.is_set():
             data = self.sendallQueue.get()
             
@@ -198,8 +201,9 @@ class socketServerManager:
                 except OSError:
                     pass
 
-    #Sends Message to specific client by using its ID via connectionsDict
+
     def send(self, id, data):
+        """Sends a message to a specific client"""
         encData = data.encode(self.encoding)
         encDataHeader = f"{len(encData):<10}".encode(self.encoding)
         with self.clientLock:
@@ -213,9 +217,4 @@ class socketServerManager:
                 
 
             
-        
-        
-        
-
-        
         

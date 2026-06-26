@@ -6,14 +6,14 @@ import threading
 import sys
 
 #Dictionaries
-configDefault = {
+CONFIG_DEFAULT = {
     "encoding":"utf-8",
     "username":"Guest",
     "password":"PyChat",
     "servers": {}
 }
 
-strings = {
+STRINGS = {
     "header":"==============\n    PyChat    \n==============",
     "configDefaultWarning":"\n[WARNING] Default username and pasword are being used, please change them in 'config.json'",
     "startMenu":"\nAvailable Actions:\n1. Register Server\n2. Connect to Server\n3. Exit",
@@ -26,7 +26,7 @@ strings = {
 #Action Functions
 
 def registerServer():
-    #Adds Server to config
+    """Adds Server to config"""
     
     terminal.clear()
     
@@ -45,20 +45,18 @@ def registerServer():
 
 
 def connectServer():
-    #Handles the entire process of connecting to the server
+    """Handles the entire process of connecting to the server"""
     
     terminal.clear()
 
     terminal.print("Enter Server IP")
     ip = terminal.getInput()
-
-    port = 0
     
     #Unregistered Server Check
     if ip in configurations.data["servers"]:
         port = configurations.data["servers"][ip]["port"]
     else:
-        terminal.print(strings["unregisteredServer"])
+        terminal.print(STRINGS["unregisteredServer"])
         return
 
     #Instantiate a connection
@@ -86,8 +84,28 @@ def connectServer():
             
             if "status" not in response:
                 raise Exception("Invalid server response")
+            
             elif response["status"] != "1":
-                raise Exception(f"Server responded with status {response['status']}, error: {response['Error']}")
+                
+                #Checking for already registered server
+                if response["status"] == "3":
+                    data = {
+                        "action":"msg",
+                        "username":configurations.data["username"],
+                        "password":configurations.data["password"],
+                        "message":""
+                    }
+                    client.send(json.dumps(data))
+                    response = json.loads(client.tryRecv())
+                    if "status" not in response:
+                        raise Exception("Invalid server response")
+                    elif response["status"] != "1":
+                        raise Exception(f"Server responded with status {response['status']}, error: {response['Error']}")
+                    configurations.data["servers"][ip]["registered"] = True
+                    configurations.save()
+                else:
+                    raise Exception(f"Server responded with status {response['status']}, error: {response['Error']}")
+                
             else:
                 configurations.data["servers"][ip]["registered"] = True
                 configurations.save()
@@ -96,8 +114,8 @@ def connectServer():
             terminal.print(f"[ERROR] {e}")
             return
     
-    #Function for receiving Thread
     def _recvThread(shutdownEvent):
+        """Internal function for receiving messages from the server"""
         while not shutdownEvent.is_set():
             try:
                 raw_data = client.tryRecv()
@@ -153,7 +171,7 @@ def connectServer():
 #EXECUTION LINE
 
 #Get the config and User Interface 
-configurations = jsonDB.jsonDB("config.json", configDefault)
+configurations = jsonDB.jsonDB("config.json", CONFIG_DEFAULT)
 terminal = userInt.userInt("Action > ")
 
 #Main Loop
@@ -161,36 +179,36 @@ while True:
     #Printing Information and Getting input
     terminal.clear()
 
-    terminal.print(strings["header"])
+    terminal.print(STRINGS["header"])
 
-    if configurations.data["username"] == configDefault["username"] or configurations.data["password"] == configDefault["password"]:
-        terminal.print(strings["configDefaultWarning"])
+    if configurations.data["username"] == CONFIG_DEFAULT["username"] or configurations.data["password"] == CONFIG_DEFAULT["password"]:
+        terminal.print(STRINGS["configDefaultWarning"])
 
-    terminal.print(strings["startMenu"])
+    terminal.print(STRINGS["startMenu"])
     action = terminal.getInput()
     
     #Processing and Executing Input    
     try:
         action = int(action)
     except:
-        terminal.print(strings["invalidAction"])
+        terminal.print(STRINGS["invalidAction"])
         terminal.getInput()
         continue
             
     if action == 1:
         registerServer()
-        terminal.print(strings["actionCompleted"])
+        terminal.print(STRINGS["actionCompleted"])
         terminal.getInput()
     elif action == 2:
         connectServer()
-        terminal.print(strings["actionCompleted"])
+        terminal.print(STRINGS["actionCompleted"])
         terminal.getInput()
     elif action == 3:
         terminal.clear()
         terminal.print(":)")
         sys.exit()
     else:
-        terminal.print(strings["invalidAction"])
+        terminal.print(STRINGS["invalidAction"])
         terminal.getInput()
     
         
