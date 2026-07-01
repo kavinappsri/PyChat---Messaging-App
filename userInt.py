@@ -37,6 +37,11 @@ class userInt:
         self.prompt = prompt
         self.inputBuffer = ""
         self.lock = Lock()
+        
+    def setPrompt(self, prompt):
+        """Sets the prompt"""
+        self.prompt = prompt
+        self._redraw()
 
     def _redraw(self):
         """Internal Function for redrawing the prompt and previous input"""

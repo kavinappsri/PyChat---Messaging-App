@@ -30,9 +30,11 @@ def registerServer():
     
     terminal.clear()
     
+    terminal.setPrompt("IP: ")
     terminal.print("Enter Server IP")
     ip = terminal.getInput()
 
+    terminal.setPrompt("Port: ")
     terminal.print("Enter Server Port")
     port = int(terminal.getInput())
     
@@ -49,6 +51,7 @@ def connectServer():
     
     terminal.clear()
 
+    terminal.setPrompt("IP: ")
     terminal.print("Enter Server IP")
     ip = terminal.getInput()
     
@@ -143,6 +146,7 @@ def connectServer():
     recvThread.start()
 
     #Main Sending Loop, to be running on main thread
+    terminal.setPrompt("Message: ")
     while True:
         message = terminal.getInput()
         if message == "exit":
@@ -172,13 +176,14 @@ def connectServer():
 
 #Get the config and User Interface 
 configurations = jsonDB.jsonDB("config.json", CONFIG_DEFAULT)
-terminal = userInt.userInt("Action > ")
+terminal = userInt.userInt("If you are seeing this, then something has gone wrong ... :(")
 
 #Main Loop
 while True:
     #Printing Information and Getting input
     terminal.clear()
 
+    terminal.setPrompt("Action: ")
     terminal.print(STRINGS["header"])
 
     if configurations.data["username"] == CONFIG_DEFAULT["username"] or configurations.data["password"] == CONFIG_DEFAULT["password"]:
