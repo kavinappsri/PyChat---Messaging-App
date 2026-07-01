@@ -15,40 +15,21 @@ CONFIG_DEFAULT = {
 
 STRINGS = {
     "header":"==============\n    PyChat    \n==============",
-    "configDefaultWarning":"\n[WARNING] Default username and pasword are being used, please change them in 'config.json'",
-    "startMenu":"\nAvailable Actions:\n1. Register Server\n2. Connect to Server\n3. Exit",
+    "configDefaultWarning":"\n[WARNING] Default username and password are being used, please change them in 'config.json'",
+    "startMenu":"\nAvailable Actions: \n1. Connect to Server\n2. Exit",
     "invalidAction":"\n[ERROR] Invalid action, please try again",
-    "actionCompleted":"\n[INFO] Action completed. Press enter to continue",
-    "unregisteredServer":"\n[ERROR] Server is not registered, please register it first."
+    "actionCompleted":"\n[INFO] Action completed. Press enter to continue"
     
 }
 
 #Action Functions
 
-def registerServer():
-    """Adds Server to config"""
-    
-    terminal.clear()
-    
-    terminal.print("Enter Server IP")
-    ip = terminal.getInput()
-
-    terminal.print("Enter Server Port")
-    port = int(terminal.getInput())
-    
-    configurations.data["servers"][ip] = {
-        "ip":ip,
-        "port":port,
-        "registered":False
-    }
-    configurations.save()
-
-
 def connectServer():
-    """Handles the entire process of connecting to the server"""
+    """Handles the entire process of connecting to the server, including registering itself if not done so before"""
     
     terminal.clear()
 
+    terminal.setPrompt("IP: ")
     terminal.print("Enter Server IP")
     ip = terminal.getInput()
     
@@ -56,8 +37,15 @@ def connectServer():
     if ip in configurations.data["servers"]:
         port = configurations.data["servers"][ip]["port"]
     else:
-        terminal.print(STRINGS["unregisteredServer"])
-        return
+        terminal.setPrompt("Port: ")
+        terminal.print("Enter Server Port")
+        port = int(terminal.getInput())
+        configurations.data["servers"][ip] = {
+            "ip":ip,
+            "port":port,
+            "registered":False
+        }
+        configurations.save()
 
     #Instantiate a connection
     client = network.socketClientManager(configurations.data["encoding"])
@@ -143,6 +131,7 @@ def connectServer():
     recvThread.start()
 
     #Main Sending Loop, to be running on main thread
+    terminal.setPrompt("Message: ")
     while True:
         message = terminal.getInput()
         if message == "exit":
@@ -172,13 +161,14 @@ def connectServer():
 
 #Get the config and User Interface 
 configurations = jsonDB.jsonDB("config.json", CONFIG_DEFAULT)
-terminal = userInt.userInt("Action > ")
+terminal = userInt.userInt("If you are seeing this, then something has gone wrong ... :(")
 
 #Main Loop
 while True:
     #Printing Information and Getting input
     terminal.clear()
 
+    terminal.setPrompt("Action: ")
     terminal.print(STRINGS["header"])
 
     if configurations.data["username"] == CONFIG_DEFAULT["username"] or configurations.data["password"] == CONFIG_DEFAULT["password"]:
@@ -195,15 +185,12 @@ while True:
         terminal.getInput()
         continue
             
+    
     if action == 1:
-        registerServer()
-        terminal.print(STRINGS["actionCompleted"])
-        terminal.getInput()
-    elif action == 2:
         connectServer()
         terminal.print(STRINGS["actionCompleted"])
         terminal.getInput()
-    elif action == 3:
+    elif action == 2:
         terminal.clear()
         terminal.print(":)")
         sys.exit()

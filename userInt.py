@@ -1,5 +1,5 @@
 import sys
-import threading
+from threading import Lock
 import os
 
 #Hardware adaptive _get_char()
@@ -7,27 +7,27 @@ import os
 if os.name == 'nt':
     #Windows adapter
 
-    import msvcrt
+    from msvcrt import getch
     def _get_char():
-        ch = msvcrt.getch()
+        ch = getch()
         if ch in (b'\x00', b'\xe0'):
-            msvcrt.getch()
+            getch()
             return None
         return ch.decode("utf-8", errors = "ignore")
 
 else:
     #Linux adapter
 
-    import tty
-    import termios
+    from tty import setraw
+    from termios import tcgetattr, TCSADRAIN, tcsetattr
     def _get_char():
         fd = sys.stdin.fileno()
-        oldSettings = termios.tcgetattr(fd)
+        oldSettings = tcgetattr(fd)
         try:
-            tty.setraw(sys.stdin.fileno())
+            setraw(sys.stdin.fileno())
             ch = sys.stdin.read(1)
         finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, oldSettings)
+            tcsetattr(fd, TCSADRAIN, oldSettings)
         return ch
 
 # CLASS - userInt
@@ -36,7 +36,12 @@ class userInt:
     def __init__(self, prompt):
         self.prompt = prompt
         self.inputBuffer = ""
-        self.lock = threading.Lock()
+        self.lock = Lock()
+        
+    def setPrompt(self, prompt):
+        """Sets the prompt"""
+        self.prompt = prompt
+        self._redraw()
 
     def _redraw(self):
         """Internal Function for redrawing the prompt and previous input"""

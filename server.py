@@ -2,6 +2,7 @@ import network
 import threading
 import json
 import jsonDB
+import userInt
 
 #Dictionaries
 
@@ -31,9 +32,9 @@ OK_RESPONSE = {
 def _shutdownThread():
     """Internal function for handling shutdown"""
     while True:
-        cmd = input()
+        cmd = terminal.getInput()
         if cmd == configurations.data["stopWord"]:
-            print("[SHUTDOWN THREAD] Commencing Shutdown Process")
+            terminal.print("[SHUTDOWN THREAD] Commencing Shutdown Process")
             server.stop()
             break
 
@@ -41,11 +42,13 @@ def _shutdownThread():
 
 #Loading all objects
 
-print("[INFO] Loading config")
+terminal = userInt.userInt('')
+
+terminal.print("[INFO] Loading config")
 
 configurations = jsonDB.jsonDB("serverconfig.json", CONFIG_DEFAULT)
 
-print(f"[INFO] Starting server at {configurations.data['ip']}:{configurations.data['port']}")
+terminal.print(f"[INFO] Starting server at {configurations.data['ip']}:{configurations.data['port']}")
 
 server = network.socketServerManager(configurations.data['ip'], configurations.data['port'])
 serverThread =  threading.Thread(target=server.start, daemon=True)
@@ -76,6 +79,8 @@ while True:
 
     #Register Action
     if data["action"] == "register":
+        terminal.print(f"[SERVER] Register request | Client ID: {packet[0]}")
+        
         if "username" not in data or "password" not in data:
             server.send(packet[0], json.dumps(BAD_REQUEST_RESPONSE))
             continue
@@ -86,10 +91,13 @@ while True:
             configurations.data["registeredClients"][data["username"]] = data["password"]
             configurations.save()
             server.send(packet[0], json.dumps(OK_RESPONSE))
+            terminal.print(f"[SERVER] Registered client | Username: {data['username']}")
             continue
             
     #Msg Action
     elif data["action"] == "msg":
+        terminal.print(f"[SERVER] Message request | Client ID: {packet[0]}")
+        
         if "username" not in data or "password" not in data or "message" not in data:
             server.send(packet[0], json.dumps(BAD_REQUEST_RESPONSE))
             continue
@@ -110,6 +118,8 @@ while True:
                 "ping":sendString
             }
             server.sendallQueue.put(json.dumps(sendable))
+            
+            terminal.print(f"[SERVER] Message sent | Username: {data['username']} | Message: {data['message']}")
             
     #Invalid Action
     else:
