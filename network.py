@@ -99,14 +99,13 @@ class socketServerManager:
                 connection, address = self.server.accept()
                 with self.clientLock:
                     self.connectionsDict[id] = connection
-                print(f"[SERVER] New connection from {address}")
 
                 self.executor.submit(self._clientThread, connection, id)
 
         except Exception as e:
             if not self.serverOnline:
-                print("[SERVER] Server stopping exception occured")
-            print("[SERVER] Error: ", e)
+                print("[NETWORK] Server stopping exception occured")
+            print("[NETWORK] Error: ", e)
 
         finally:
             self.server.close()
@@ -124,7 +123,7 @@ class socketServerManager:
             serverReloader.connect(reloader_ip, self.port)
             serverReloader.close()
         except Exception as e:
-            print(f'[SERVER-STOP] Error {e}')
+            print(f'[NETWORK-STOP] Error {e}')
         
         #Closing Client Threads
         with self.clientLock:
@@ -133,7 +132,7 @@ class socketServerManager:
                     connection.shutdown(socket.SHUT_RDWR)
                     connection.close()
                 except Exception as e:
-                    print(f'[SERVER-STOP] Error {e}')
+                    print(f'[NETWORK-STOP] Error {e}')
         
         #Sending Poison Pills
         self.sendallQueue.put(None)
@@ -161,7 +160,6 @@ class socketServerManager:
                         payloadBytes += msgChunk
 
                     data = payloadBytes.decode("utf-8")
-                    print(f"[SERVER] Received: {data}")
                     self.inputQueue.put([id, data])
 
                 if not header:
@@ -169,7 +167,7 @@ class socketServerManager:
 
         except Exception as e:
             if not self.shutdownEvent.is_set():
-                print(f"[CLIENT-THREAD] Error: {e}")
+                print(f"[NETWORK-CLIENT {id}] Error: {e}")
                 
         finally:
             with self.clientLock:
@@ -212,7 +210,7 @@ class socketServerManager:
         try:
             connection.sendall(encDataHeader + encData)
         except OSError as e:
-            print(f"[SERVER] Error: {e}")
+            print(f"[NETWORK] Error: {e}")
             
                 
 
