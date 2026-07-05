@@ -6,8 +6,9 @@ authors = [
     {name = "kavinappsri",email = "kavin.app.sri@gmail.com"}
 ]
 readme = "README.md"
-requires-python = "^3.14"
+requires-python = ">=3.14,<3.15"
 dependencies = [
+    "pyside6 (>=6.11.1,<7.0.0)"
 ]
 
 
