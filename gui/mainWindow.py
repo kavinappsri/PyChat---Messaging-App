@@ -21,7 +21,6 @@ class MainWindow(QWidget):
         
         self.stack.setCurrentWidget(self.connectPage)
         
-        self.connectPage.connectionRequested.connect(self.showChatPage)
         
         
     def _createWidgets(self):

@@ -1,13 +1,11 @@
-import sys
-from PySide6.QtWidgets import QApplication
-from PySide6.QtCore import QObject, Signal
-from gui.mainWindow import MainWindow
+from PySide6.QtCore import QObject, Signal, Slot
+from network import socketClientManager
 
 
 class Client(QObject):
     connected = Signal()
     disconnected = Signal()
-    connectionFailed = Signal(str)
+    connectionError = Signal(str)
     messageReceived = Signal(str)
     
     def __init__(self):
@@ -15,25 +13,28 @@ class Client(QObject):
         self.socketClient = None
         self.receiveThread = None
         self.stopEvent = None
+   
+    @Slot(str, int)     
+    def tryConnect(self, ip: str, port:int) -> None:
         
-    def tryConnect(self):
-        pass
+        username = "guest"
+        password = "12345"
+        
+        self.socketClient = socketClientManager("utf-8")
+        
+        try:
+            self.socketClient.connect(ip, port)
+        except Exception as e:
+            self.connectionError.emit(str(e))
+            
+        
     
-    def disconnect(self):
-        pass
+    def disconnectFromServer(self):
+        self.socketClient.close()
     
     def sendMessage(self, message):
         pass
     
 
 
-def main():
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    app.exec()
-    
-    
-if __name__ == "__main__":
-    main()
     
