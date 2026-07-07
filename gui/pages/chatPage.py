@@ -47,9 +47,7 @@ class ChatPage(QWidget):
         self.topBar.addWidget(self.disconnectButton)
         
         self.layout.addLayout(self.topBar)
-        self.layout.addStretch()
         self.layout.addWidget(self.messageArea)
-        self.layout.addStretch()
         self.layout.addLayout(self.inputBar)
         
         
