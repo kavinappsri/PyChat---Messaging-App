@@ -47,5 +47,9 @@ class MainWindow(QWidget):
     @Slot()
     def showChatPage(self):
         self.stack.setCurrentWidget(self.chatPage)
+        
+    @Slot()
+    def showConnectPage(self):
+        self.stack.setCurrentWidget(self.connectPage)
     
     

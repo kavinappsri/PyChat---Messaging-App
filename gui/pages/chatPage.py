@@ -1,5 +1,5 @@
-from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QLineEdit, QPushButton, QHBoxLayout
+from PySide6.QtCore import Signal, Slot
+from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QTextEdit, QLineEdit, QPushButton, QHBoxLayout
 from PySide6.QtGui import QFont
 
 class ChatPage(QWidget):
@@ -21,7 +21,8 @@ class ChatPage(QWidget):
         
     def _createWidgets(self):
         self.serverLabel = QLabel("Server Name")
-        self.devPlaceholder = QLabel("Message Area (Coming Soon !!!)")
+        self.messageArea = QTextEdit()
+        self.messageArea.setReadOnly(True)
         self.messageEdit = QLineEdit()
         self.sendButton = QPushButton("Send")
         self.disconnectButton = QPushButton("Disconnect")
@@ -47,7 +48,7 @@ class ChatPage(QWidget):
         
         self.layout.addLayout(self.topBar)
         self.layout.addStretch()
-        self.layout.addWidget(self.devPlaceholder)
+        self.layout.addWidget(self.messageArea)
         self.layout.addStretch()
         self.layout.addLayout(self.inputBar)
         
@@ -55,7 +56,7 @@ class ChatPage(QWidget):
         
     def _applyStyles(self):
         self.serverLabel.setFont(QFont("Arial", 20))
-        self.devPlaceholder.setFont(QFont("Arial", 12))
+        self.messageArea.setFont(QFont("Arial", 12))
         
     def _trySendMessage(self):
         if not self.messageEdit.text().strip():
@@ -64,4 +65,7 @@ class ChatPage(QWidget):
         self.messageSendRequested.emit(self.messageEdit.text())
         self.messageEdit.clear()
         
+    @Slot(str)
+    def addMessage(self, message: str) -> None:
+        self.messageArea.append(message)
         
