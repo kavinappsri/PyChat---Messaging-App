@@ -22,7 +22,7 @@ class ConnectPage(QWidget):
         
     def _createWidgets(self):
         self.title = QLabel("PyChat")
-        self.subtitle = QLabel("idk what to write as the subtitle")
+        self.subtitle = QLabel("Idk what to write as the subtitle")
         self.connectButton = QPushButton("Connect To Server")
         self.ipEdit = QLineEdit()
         self.portEdit = QLineEdit()
@@ -50,7 +50,8 @@ class ConnectPage(QWidget):
         self.title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.title.setFont(QFont("Arial", 26))
-        self.subtitle.setFont(QFont("Arial", 12))
+        self.title.setFont(QFont("Arial", 25))
+        self.subtitle.setFont(QFont("Arial", 14))
+        self.title.setObjectName("Bold")
 
         

@@ -146,7 +146,6 @@ class socketServerManager:
     # Client Handling Function
     def _clientThread(self, connection, id):
         """Internal function for handling client connections"""
-        print(f"[NETWORK-DEBUG] New client connected with id: {id}")
         try:
             while not self.shutdownEvent.is_set():
                 header = connection.recv(10)

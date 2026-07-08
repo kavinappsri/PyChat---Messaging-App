@@ -1,8 +1,25 @@
 from threading import Thread, Event
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import QObject, QThread, Signal, Slot
 from network import socketClientManager
 import json
 
+
+class ConnectionWorker(QObject):
+    
+    finished = Signal()
+    
+    def __init__(self, client: Client, ip: str, port: int):
+        super().__init__()
+        self.client: Client = client
+        self.ip: str = ip
+        self.port: int = port
+        
+    @Slot()
+    def run(self):
+        try:
+            self.client._tryConnect(self.ip, self.port)
+        finally:
+            self.finished.emit()
 
 class Client(QObject):
     connected = Signal()
@@ -18,13 +35,16 @@ class Client(QObject):
         self.config = config
         self.currentConnectedServerIp: str | None = None
         self.currentConnectedServerPort: int | None = None
-   
-    @Slot(str, int)     
-    def tryConnect(self, ip: str, port: int) -> None:
+        self.connectionWorker: ConnectionWorker | None = None
+        self.connectionThread: QThread | None = None
+        self.currentlyConnecting: bool = False
+      
+    def _tryConnect(self, ip: str, port: int) -> None:
         
         encoding = self.config.data["encoding"]
         self.currentConnectedServerIp = ip
         self.currentConnectedServerPort = port
+        self.currentlyConnecting = True
 
         self.socketClient = socketClientManager(encoding)
         try:
@@ -43,6 +63,7 @@ class Client(QObject):
             self.connectionError.emit(str(e))
             self.currentConnectedServerIp = None
             self.currentConnectedServerPort = None
+            self.currentlyConnecting = False
             
         
     @Slot()
@@ -54,6 +75,7 @@ class Client(QObject):
 
             self.currentConnectedServerIp = None
             self.currentConnectedServerPort = None
+            self.currentlyConnecting = False
             
             self.disconnected.emit()
     
@@ -74,6 +96,7 @@ class Client(QObject):
             self.socketClient.send(json.dumps(messageRequestData))
         except Exception as e:
             self.connectionError.emit(str(e))
+            self.currentlyConnecting = False
     
     def _registerServer(self):
         if self.currentConnectedServerIp not in self.config.data["servers"]:
@@ -156,6 +179,27 @@ class Client(QObject):
         except Exception as e:
             if not self.stopEvent.is_set():
                 self.connectionError.emit(str(e))
+                
+    @Slot(str, int)
+    def connectAsync(self, ip: str, port: int) -> None:
+        if self.currentlyConnecting:
+            return
+        
+        self.connectionWorker = ConnectionWorker(self, ip, port)
+        self.connectionThread = QThread()
+        
+        assert self.connectionWorker is not None
+        assert self.connectionThread is not None
+        
+        self.connectionWorker.moveToThread(self.connectionThread)
+        self.connectionThread.started.connect(self.connectionWorker.run)
+        self.connectionWorker.finished.connect(self.connectionThread.quit)
+        self.connectionThread.finished.connect(self.connectionThread.deleteLater)
+        self.connectionWorker.finished.connect(self.connectionWorker.deleteLater)
+        
+        
+        self.connectionThread.start()
+        
                     
             
             
