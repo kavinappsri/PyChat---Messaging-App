@@ -22,10 +22,10 @@ class ConnectionWorker(QObject):
             self.finished.emit()
 
 class Client(QObject):
-    connected = Signal()
+    connected = Signal(str)
     disconnected = Signal()
     connectionError = Signal(str)
-    messageReceived = Signal(str)
+    messageReceived = Signal(str, bool, str)
     
     def __init__(self, config):
         super().__init__()
@@ -38,6 +38,7 @@ class Client(QObject):
         self.connectionWorker: ConnectionWorker | None = None
         self.connectionThread: QThread | None = None
         self.currentlyConnecting: bool = False
+        self.currentServerName: str | None = None
       
     def _tryConnect(self, ip: str, port: int) -> None:
         
@@ -48,16 +49,19 @@ class Client(QObject):
 
         self.socketClient = socketClientManager(encoding)
         try:
+            assert self.socketClient is not None
+            
             self.socketClient.connect(ip, port)
             
             self._registerServer()
             self._registerInServer()
+            self._getServerDetails()
             
             self.stopEvent = Event()
             recvThread = Thread(target=self._receiveThread, daemon=True)
             recvThread.start()
             
-            self.connected.emit()
+            self.connected.emit(self.currentServerName)
             
         except Exception as e:
             self.connectionError.emit(str(e))
@@ -109,8 +113,7 @@ class Client(QObject):
             self.config.save()
             
     def _registerInServer(self):
-        if self.socketClient is None:
-            raise Exception("Socket client not initialized")
+        assert self.socketClient is not None
         
         if not self.config.data["servers"][self.currentConnectedServerIp]["registered"]:
             
@@ -155,6 +158,29 @@ class Client(QObject):
             else:
                 raise Exception(f"Server responded with status {response['status']}, error: {response['Error']}")
             
+    def _getServerDetails(self):
+        assert self.socketClient is not None
+        
+        detailRequestData = {
+            "action":"getName",
+            "username":self.config.data["username"],
+            "password":self.config.data["password"]
+        }
+        
+        self.socketClient.send(json.dumps(detailRequestData))
+        response = json.loads(self.socketClient.tryRecv())
+        
+        if "status" not in response:
+            raise Exception("Invalid server response")
+        elif response["status"] != "1":
+            raise Exception(f"Server responded with status {response['status']}, error: {response['Error']}")
+        elif "name" not in response:
+            raise Exception("Invalid server response")
+        
+        print(response)
+        
+        self.currentServerName = response["name"]
+            
     def _receiveThread(self):
         try:
             while not self.stopEvent.is_set():
@@ -173,8 +199,9 @@ class Client(QObject):
                 elif data['status'] != '1':
                     raise Exception(f"Server responded with status {data['status']}, error: {data['Error']}")
                 else:
-                    if "ping" in data:
-                        self.messageReceived.emit(data['ping']) 
+                    if "ping" in data and "author" in data:
+                        isUser = data['author'] == self.config.data["username"]
+                        self.messageReceived.emit(data['ping'], isUser, data['author']) 
                         
         except Exception as e:
             if not self.stopEvent.is_set():

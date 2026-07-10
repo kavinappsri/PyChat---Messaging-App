@@ -49,9 +49,11 @@ class MainWindow(QWidget):
         with open("gui/styles/dark.qss") as file:
             self.setStyleSheet(file.read())
         
-    @Slot()
-    def showChatPage(self):
+    @Slot(str)
+    def showChatPage(self, serverName: str):
         self.stack.setCurrentWidget(self.chatPage)
+        self.chatPage.setServerName(serverName)
+        self.chatPage.clearMessages()
         
     @Slot()
     def showConnectPage(self):

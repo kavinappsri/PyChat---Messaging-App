@@ -52,7 +52,7 @@ QScrollBar::handle:vertical {
     border-radius: 4px;
 }
 QScrollBar::handle:vertical:hover {
-    background: #8048D8;      
+    background: #6811CD;      
 }
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
     border: none;             
@@ -77,5 +77,21 @@ QFrame#errorFrame {
     border: none;
     padding: 12px;
     border-radius: 8px;    
+}
+QFrame#UserMessage {
+    background-color: #6811CD;
+    border-radius: 8px;
+    padding: 10px;
+}
+QFrame#OtherMessage
+{
+    background-color: #2D2D35;
+    border-radius: 8px;
+    padding: 10px;
+}
+QScrollArea {
+    background-color: #121214;
+    border: 1px solid #2C2630;
+    border-radius: 8px; 
 }
 

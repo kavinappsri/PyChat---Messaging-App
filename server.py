@@ -10,6 +10,7 @@ CONFIG_DEFAULT = {
     "ip":"0.0.0.0",
     "port":8080,
     "stopWord":"stop",
+    "ServerName":"Server1234",
     "registeredClients":{}
 }
 
@@ -87,6 +88,9 @@ while True:
         elif data["username"] in configurations.data["registeredClients"]:
             server.send(packet[0], json.dumps(ACTION_DENIED_RESPONSE))
             continue
+        elif not data["username"].strip() or not data["password"].strip():
+            server.send(packet[0], json.dumps(ACTION_DENIED_RESPONSE))
+            continue
         else:
             configurations.data["registeredClients"][data["username"]] = data["password"]
             configurations.save()
@@ -112,14 +116,31 @@ while True:
                 server.send(packet[0], json.dumps(OK_RESPONSE))
                 continue
                 
-            sendString = f'<{data["username"]}> {data["message"]}'
             sendable = {
                 "status":"1",
-                "ping":sendString
+                "ping":data["message"],
+                "author":data["username"]
             }
             server.sendallQueue.put(json.dumps(sendable))
             
             terminal.print(f"[SERVER] Message sent | Username: {data['username']} | Message: {data['message']}")
+            
+    elif data["action"] == "getName":
+        if "username" not in data or "password" not in data:
+            server.send(packet[0], json.dumps(BAD_REQUEST_RESPONSE))
+            continue
+        elif data["username"] not in  configurations.data["registeredClients"]:
+            server.send(packet[0], json.dumps(ACTION_DENIED_RESPONSE))
+            continue
+        elif data["password"] != configurations.data["registeredClients"][data["username"]]:
+            server.send(packet[0], json.dumps(ACTION_DENIED_RESPONSE))
+            continue
+        else:
+            sendable = {
+                "status":"1",
+                "name":configurations.data["serverName"]
+            }
+            server.send(packet[0], json.dumps(sendable))
             
     #Invalid Action
     else:
