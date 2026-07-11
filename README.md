@@ -2,6 +2,8 @@
 
 PyChat is a lightweight desktop chat application that pairs a PySide6 client with a threaded TCP server. It gives you a small, readable Python codebase for experimenting with socket networking, JSON message payloads, client registration, and real-time message broadcasting.
 
+![PyChat Screenshot](docs/PyChat%20Screenshot.png)
+
 ## Key Features
 
 - **Desktop chat client**: Qt-based interface built with PySide6.
