@@ -1,10 +1,10 @@
 from PySide6.QtCore import Slot
 from PySide6.QtWidgets import QStackedWidget, QWidget, QVBoxLayout
-
-from gui.pages.chatPage import ChatPage
-from gui.pages.connectPage import ConnectPage
-from gui.pages.errorPage import ErrorPage
-from gui.pages.loadingPage import LoadingPage
+from pathlib import Path
+from client.gui.pages.chatPage import ChatPage
+from client.gui.pages.connectPage import ConnectPage
+from client.gui.pages.errorPage import ErrorPage
+from client.gui.pages.loadingPage import LoadingPage
 
 
 class MainWindow(QWidget):
@@ -46,7 +46,9 @@ class MainWindow(QWidget):
         self.setLayout(self.layout)
         
     def _applyStyles(self):
-        with open("gui/styles/dark.qss") as file:
+        style_path = Path(__file__).parent / "styles" / "dark.qss"
+        
+        with style_path.open() as file:
             self.setStyleSheet(file.read())
         
     @Slot(str)

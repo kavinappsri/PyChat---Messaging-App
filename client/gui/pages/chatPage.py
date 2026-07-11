@@ -1,7 +1,7 @@
 from PySide6.QtCore import Signal, Slot, QTimer
 from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QLineEdit, QPushButton, QHBoxLayout, QScrollArea
 from PySide6.QtGui import QFont
-from gui.widgets.messageBubble import MessageBubble
+from client.gui.widgets.messageBubble import MessageBubble
 
 class ChatPage(QWidget):
     
@@ -108,8 +108,11 @@ class ChatPage(QWidget):
         
         self.messageArea = QWidget()
         self.scrollLayout = QVBoxLayout()
+        self.scrollLayout.setSpacing(5)
 
         self.scrollLayout.addStretch()
         
         self.messageArea.setLayout(self.scrollLayout)
         self.messageScrollArea.setWidget(self.messageArea)
+        
+        

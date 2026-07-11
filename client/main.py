@@ -1,6 +1,6 @@
 import sys
 from PySide6.QtWidgets import QApplication
-from application import Application
+from client.application import Application
 
 
 def main():
@@ -11,5 +11,4 @@ def main():
     
 if __name__ == "__main__":
     main()   
-
 

@@ -6,17 +6,17 @@ This is a lightweight messaging app built using python.
 
 ### Start a Server
 
-1. Check for and open the file ```serverconfig.json``` (if there is none, run and close ```server.py``` once to generate it).
+1. Check for and open the file ```serverconfig.json``` (if there is none, run and close ```python3 -m server.main``` once to generate it).
 
 2. In the file, change the values for "ip" and "port" to your desired ip and port (Make sure you have access to your chosen ip and port). By default, it will be set to ```0.0.0.0``` and ```8080```.
 
-3. Run ```server.py``` to start your server. Type 'stop' to shut it down
+3. Run ```python3 -m server.main``` to start your server. Type 'stop' to shut it down.
 
 ### Use the Client
 
-1. Run ```client.py```
+1. Run ```python3 -m client.main```
 
-2. It is recommended that you change the "username" and "password" fields in config.json from their default values. Not doing so may result in problems while connecting to servers _Note: if you do, you must close and rerun ```client.py``` to load your changes/prevent the config file from being overwritten_.
+2. It is recommended that you change the "username" and "password" fields in config.json from their default values. Not doing so may result in problems while connecting to servers _Note: if you do, you must close and rerun ```python3 -m client.main``` to load your changes/prevent the config file from being overwritten_.
 
 3. To connect to a new server, you must register it first. To do this, press 1 and then enter on your keyboard, which will execute Action 1 from the actions menu. Enter the server IP and port when prompted.
 

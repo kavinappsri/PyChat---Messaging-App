@@ -97,6 +97,10 @@ class socketServerManager:
                 id += 1
                 self.server.listen(self.maxBacklog)
                 connection, address = self.server.accept()
+                if not self.serverOnline or self.shutdownEvent.is_set():
+                    connection.close()
+                    break
+
                 with self.clientLock:
                     self.connectionsDict[id] = connection
 

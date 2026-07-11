@@ -1,7 +1,9 @@
-from client import Client
-from gui.mainWindow import MainWindow
+from pathlib import Path
+
+from client.client import Client
+from client.gui.mainWindow import MainWindow
 from jsonDB import jsonDB
-from config.defaults import CONFIG_DEFAULT
+from client.config.defaults import CONFIG_DEFAULT
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Slot
 
@@ -9,7 +11,8 @@ from PySide6.QtCore import Slot
 class Application:
     def __init__(self, qtApp: QApplication):
         self.qtApp = qtApp
-        self.config = jsonDB("config.json", CONFIG_DEFAULT)
+        configPath = Path(__file__).parent / "config.json"
+        self.config = jsonDB(configPath, CONFIG_DEFAULT)
         self.client = Client(self.config)
         self.mainWindow = MainWindow()
         
