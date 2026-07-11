@@ -1,11 +1,12 @@
 import json
+from pathlib import Path
 
-#CLASS JSONDB
 class jsonDB:
     """Provides a simple database API with read and write capability"""
-    def __init__(self, path, default):
+    def __init__(self, path: str | Path, default: dict):
         self.path = path
  
+        #incase file is corrupted/doesn't exist
         try:
             with open(path, 'r') as f:
                 self.data = json.load(f)
@@ -16,7 +17,7 @@ class jsonDB:
                 return
                 
            
-    def save(self):
+    def save(self) -> None:
         """Saves changes in self.data to the file"""
         with open(self.path, 'w') as f:
             json.dump(self.data, f, indent = 4)

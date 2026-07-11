@@ -1,6 +1,6 @@
 import socket
-import threading
-import queue
+from threading import Lock, Event
+from queue import Queue
 from concurrent.futures import ThreadPoolExecutor
 
 #Networking API, for both server and client
@@ -8,12 +8,12 @@ from concurrent.futures import ThreadPoolExecutor
 
 class socketClientManager:
     """Provides a simple socket client API"""
-    def __init__(self, encoding):
+    def __init__(self, encoding: str):
         self.encoding = encoding
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
     
-    def connect(self, ip, port):
+    def connect(self, ip: str, port: int) -> None:
         """Connects to a server at the given ip and port"""
         try:
             self.client.connect((ip, port))
@@ -21,7 +21,7 @@ class socketClientManager:
             raise
             
     
-    def tryRecv(self): 
+    def tryRecv(self) -> str | None: 
         """Tries to recieve a message from the server, returns None if no message is recieved"""
         try:
             header = self.client.recv(10)
@@ -45,14 +45,14 @@ class socketClientManager:
         except Exception as e:
              raise
     
-    def send(self, data):
+    def send(self, data: str) -> None:
         """Sends a message to the server"""
         encData = data.encode(self.encoding)
         encDataHeader = f"{len(encData):<10}".encode(self.encoding)
         
         self.client.sendall(encDataHeader + encData)
 
-    def close(self):
+    def close(self) -> None:
         """Closes the client connection"""
         try:
             self.client.shutdown(socket.SHUT_RDWR)
@@ -64,19 +64,19 @@ class socketClientManager:
 #Server Class
 class socketServerManager:
     """Provides a simple socket server API"""
-    def __init__(self, ip, port, maxBacklog = 5):
+    def __init__(self, ip: str, port: int, maxBacklog: int = 5):
         #Initialize all the properties
-        self.ip = ip
-        self.port = port
-        self.maxBacklog = maxBacklog
-        self.serverOnline = False
-        self.connectionsDict = {}
-        self.inputQueue = queue.Queue()
-        self.sendallQueue = queue.Queue()
-        self.shutdownEvent = threading.Event()
-        self.clientLock = threading.Lock()
-        self.executor = ThreadPoolExecutor(max_workers=5)
-        self.encoding = 'utf-8'
+        self.ip: str = ip
+        self.port: int = port
+        self.maxBacklog: int = maxBacklog
+        self.serverOnline: bool = False
+        self.connectionsDict: dict[int, socket.socket] = {}
+        self.inputQueue: Queue = Queue()
+        self.sendallQueue: Queue = Queue()
+        self.shutdownEvent: Event = Event()
+        self.clientLock: Lock = Lock()
+        self.executor: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=5)
+        self.encoding: str = 'utf-8'
 
         #Create the socket, set the opts and bind the ip and port
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -85,7 +85,7 @@ class socketServerManager:
         self.server.bind((self.ip, self.port))
 
 
-    def start(self):
+    def start(self) -> None:
         """Starts the server"""
         try:
             self.serverOnline = True
@@ -97,6 +97,10 @@ class socketServerManager:
                 id += 1
                 self.server.listen(self.maxBacklog)
                 connection, address = self.server.accept()
+                if not self.serverOnline or self.shutdownEvent.is_set():
+                    connection.close()
+                    break
+
                 with self.clientLock:
                     self.connectionsDict[id] = connection
 

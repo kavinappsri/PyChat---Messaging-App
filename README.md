@@ -1,41 +1,176 @@
 # PyChat
 
-This is a lightweight messaging app built using python.
+PyChat is a lightweight desktop chat application that pairs a PySide6 client with a threaded TCP server. It gives you a small, readable Python codebase for experimenting with socket networking, JSON message payloads, client registration, and real-time message broadcasting.
 
-## Instructions to use
+## Key Features
 
-### Start a Server
+- **Desktop chat client**: Qt-based interface built with PySide6.
+- **Threaded TCP server**: Handles multiple connected clients concurrently.
+- **JSON protocol**: Sends structured requests and responses over persistent socket connections.
+- **Client registration**: Stores usernames and passwords per server before allowing messages.
+- **Broadcast messaging**: Relays accepted chat messages to all connected clients.
+- **File-backed configuration**: Generates editable JSON config files for client and server settings.
+- **Shared networking layer**: Keeps socket framing, send, receive, and shutdown behavior in `network.py`.
 
-1. Check for and open the file ```serverconfig.json``` (if there is none, run and close ```server.py``` once to generate it).
+## Project Structure
 
-2. In the file, change the values for "ip" and "port" to your desired ip and port (Make sure you have access to your chosen ip and port). By default, it will be set to ```0.0.0.0``` and ```8080```.
+```text
+PyChat/
+├── client/
+│   ├── main.py                 # Desktop client entry point
+│   ├── application.py          # Wires the GUI to the client networking layer
+│   ├── client.py               # Client connection, registration, and messaging logic
+│   ├── config/defaults.py      # Default client configuration
+│   └── gui/                    # PySide6 windows, pages, widgets, and styles
+├── server/
+│   ├── main.py                 # Server entry point
+│   ├── server.py               # Server lifecycle and request handling
+│   ├── const.py                # Default server configuration and response constants
+│   └── userInt.py              # Console input/output helper for server commands
+├── network.py                  # Shared socket client/server managers
+├── jsonDB.py                   # JSON file persistence helper
+├── pyproject.toml              # Python and dependency metadata
+└── poetry.lock                 # Locked dependency versions
+```
 
-3. Run ```server.py``` to start your server. Type 'stop' to shut it down
+## Prerequisites
 
-### Use the Client
+- Python `>=3.14,<3.15`
+- Poetry 2.x or newer
+- A network interface and port you can bind for the server
 
-1. Run ```client.py```
+PyChat currently depends on:
 
-2. It is recommended that you change the "username" and "password" fields in config.json from their default values. Not doing so may result in problems while connecting to servers _Note: if you do, you must close and rerun ```client.py``` to load your changes/prevent the config file from being overwritten_.
+```toml
+pyside6 = ">=6.11.1,<7.0.0"
+```
 
-3. To connect to a new server, you must register it first. To do this, press 1 and then enter on your keyboard, which will execute Action 1 from the actions menu. Enter the server IP and port when prompted.
+## Installation
 
-4. To connect to a registered server, press 2 and then enter on your keyboard. When prompted, enter the server IP. To exit the server, type 'exit'.
+Clone the repository and install the locked dependencies with Poetry:
 
-5. To exit the program, type 3 and then enter, on your keyboard menu. This will, execute action 3, which will close the program
+```bash
+git clone https://github.com/kavinappsri/PyChat---Messaging-App.git
+cd PyChat
+poetry install
+```
 
-## Note
+If you prefer to use an existing virtual environment, install the project dependency directly:
 
-This program uses ANSI escape codes. Older terminals such as may fail to register these properly
+```bash
+python3.14 -m pip install "pyside6>=6.11.1,<7.0.0"
+```
 
-## Technical
+## Configuration
 
-This program uses socket for networking. All the networking calls are in ```network.py```. ```jsonDB.py``` is used to read and write to json files used for storage (eg. config.json). ```userInt.py``` is used to provide the console user interface for the client
+PyChat creates JSON configuration files automatically the first time each entry point runs.
 
-In the server, this program uses multi-threading to handle multiple clients, along with another thread to send messages to all the clients. Queues are used to exchange information b/w threads
+### Server Configuration
 
-The client also uses multi-threading to handle simultaneous input and output, from the user and the server. Both server and client use the json files to keep track of the registered servers/clients
+Run the server once to generate `server/serverconfig.json`:
 
-JSON is typically transmitted through the TCP stream. The client will send a json object containing a 'action' parameters with the value being the requested action, along with parameters for the action. Not having an action or the required parameters will result in a bad request error being sent by the server. There server will send back a status number (1 - OK, 2 - Bad Request, 3 - Action Denied) along with some optional parameters like error (in case of codes 2 or 3) or ping (what message is sent)
+```bash
+poetry run python -m server.main
+```
 
-For more details, please look at the source code.
+Stop it by typing the configured stop word, which is `stop` by default. Then edit the generated file as needed:
+
+```json
+{
+  "ip": "0.0.0.0",
+  "port": 8080,
+  "stopWord": "stop",
+  "serverName": "Server1234",
+  "registeredClients": {}
+}
+```
+
+### Client Configuration
+
+Run the client once to generate `client/config.json`:
+
+```bash
+poetry run python -m client.main
+```
+
+Close the app, then edit the generated username and password before connecting to a shared server:
+
+```json
+{
+  "encoding": "utf-8",
+  "username": "Guest",
+  "password": "hello_world",
+  "servers": {}
+}
+```
+
+Using unique credentials per user is recommended because the server registers usernames and rejects duplicate or mismatched credentials.
+
+## Basic Usage
+
+Start the server in one terminal:
+
+```bash
+poetry run python -m server.main
+```
+
+Start one or more clients in separate terminals:
+
+```bash
+poetry run python -m client.main
+```
+
+In the client window:
+
+1. Enter the server IP address.
+2. Enter the server port, such as `8080`.
+3. Select **Connect To Server**.
+4. Type a message and select **Send**.
+5. Select **Disconnect** to leave the server.
+
+To stop the server, type the configured stop word in the server terminal:
+
+```text
+stop
+```
+
+## Message Protocol
+
+PyChat frames each socket message with a 10-byte length header followed by a JSON payload. Clients send an `action` field to request server behavior.
+
+Example registration payload:
+
+```json
+{
+  "action": "register",
+  "username": "Guest",
+  "password": "hello_world"
+}
+```
+
+Example chat payload:
+
+```json
+{
+  "action": "msg",
+  "username": "Guest",
+  "password": "hello_world",
+  "message": "Hello from PyChat!"
+}
+```
+
+Server responses include a `status` field:
+
+| Status | Meaning |
+| --- | --- |
+| `1` | OK |
+| `2` | Bad request |
+| `3` | Action denied |
+
+## Development Notes
+
+- `network.py` owns socket setup, message framing, broadcast queues, and shutdown behavior.
+- `server/server.py` validates requests, persists registered clients, and broadcasts accepted messages.
+- `client/client.py` manages async connection setup, server registration, message sending, and receive-loop signals.
+- `client/gui/` contains the PySide6 interface pages and reusable widgets.
+
