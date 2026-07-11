@@ -72,6 +72,7 @@ class Client(QObject):
         
     @Slot()
     def disconnectFromServer(self) -> None:
+        '''disconnects from the server'''
         if self.socketClient is not None:
             
             self.stopEvent.set()
@@ -85,6 +86,7 @@ class Client(QObject):
     
     @Slot(str)
     def sendMessage(self, message: str) -> None:
+        '''Sends a message to the server'''
         try:
             if not message.strip():
                 return
@@ -176,8 +178,7 @@ class Client(QObject):
             raise Exception(f"Server responded with status {response['status']}, error: {response['Error']}")
         elif "name" not in response:
             raise Exception("Invalid server response")
-        
-        print(response)
+    
         
         self.currentServerName = response["name"]
             
@@ -209,6 +210,7 @@ class Client(QObject):
                 
     @Slot(str, int)
     def connectAsync(self, ip: str, port: int) -> None:
+        '''Instatiates a thread that establishes a connection to the server'''
         if self.currentlyConnecting:
             return
         

@@ -9,6 +9,7 @@ from PySide6.QtCore import Slot
 
 
 class Application:
+    '''AppController for the client'''
     def __init__(self, qtApp: QApplication):
         self.qtApp = qtApp
         configPath = Path(__file__).parent / "config.json"
@@ -26,6 +27,7 @@ class Application:
         self.mainWindow.errorPage.errorPageExit.connect(self.mainWindow.showConnectPage)
         
     def run(self):
+        '''Starts the app mainloop'''
         self.mainWindow.show()
         self.qtApp.exec()
         

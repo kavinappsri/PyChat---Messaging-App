@@ -27,6 +27,7 @@ class Server:
                 break
         
     def run(self) -> None:
+        '''Runs the server'''
         self.serverThread.start()
         self.inputThread.start()
         
@@ -49,6 +50,7 @@ class Server:
                 self.server.send(packet[0], dumps(BAD_REQUEST_RESPONSE))
                 continue
 
+            #Valid Actions
             elif data["action"] == "register":
                 self.terminal.print(f"[SERVER] Register request | Client ID: {packet[0]}")
     

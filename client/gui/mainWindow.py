@@ -8,6 +8,7 @@ from client.gui.pages.loadingPage import LoadingPage
 
 
 class MainWindow(QWidget):
+    '''Main window of the client'''
     def __init__(self):
         super().__init__()
         
